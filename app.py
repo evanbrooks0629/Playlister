@@ -3,6 +3,9 @@ import json
 from flask import Flask, redirect, url_for, render_template, request
 from spotify import *
 from linked_list import DoublyLinkedList
+from shuffle import *
+from graph import Graph
+from heap import Min_Heap
 
 app = Flask(__name__, static_folder="./static")
 
@@ -32,7 +35,8 @@ def home():
             # get user's playlists
             playlists=get_users_playlists(username)
             user_data['playlists'] = playlists
-
+            user_data['playlist'] = 'No Playlist'
+            user_data['tracks'] = []
             user_data['index'] = 0
 
         # SELECT PLAYLIST
@@ -68,10 +72,16 @@ def home():
         # PLAYBACK BUTTONS
 
         if 'submit_shuffle' in request.form:
-            print('shuffle clicked')
+            if len(user_data['tracks']) > 0:
+                shuffled_playlist = fisher_yates(user_data['tracks'])
+                user_data['tracks'] = shuffled_playlist
+                user_data['index'] = 0
 
         if 'submit_p_shuffle' in request.form:
-            print('psuedo clicked')
+            if len(user_data['tracks']) > 0:
+                shuffled_playlist = psuedo_shuffle(user_data['tracks'])
+                user_data['tracks'] = shuffled_playlist
+                user_data['index'] = 0
 
         if 'submit_f_t_b' in request.form:
             # get forward array from LL, set tracks to it

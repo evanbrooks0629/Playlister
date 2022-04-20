@@ -149,53 +149,53 @@ def get_random_playlists():
     return random_playlists 
 
 def get_rand_playlist_tracks(playlist_id):
-    # specific function for the largest playlist, which requires multiple requests on the
-    # same playlist in order to reach the data point count
-    # TODO
-    # [ ] do this for all playlists to get every track
+    # get the playlist object with name and items from preselected random
 
     token = get_new_token(client_id, client_secret)
 
-    if playlist_id == "5S8SJdl1BDc0ugpkEvFsIL": # longest playlist, so deal with refresh to get all 10,000 songs
-        largest_playlist_obj = {
-            "name": "The Longest Playlist on Spotify® (Official)",
-            "items": []
-        }
-        largest_playlist_tracks = []
+    playlist = {}
 
-        # a slight 100 api calls...
-        for i in range(0, 100):
-            if i % 10 == 0:
-                token = get_new_token(client_id, client_secret)
-                print(i)
-            offset = str(i * 100)
-            response = requests.get(
-                f"https://api.spotify.com/v1/playlists/{playlist_id}",
-                headers={
-                    "Authorization": f"Bearer {token}",
-                    "Content-Type": "application/json",
-                    "offset": offset
-                }
-            )
-            if response:
-                response_json = response.json()
-                largest_playlist_tracks += response_json['tracks']['items']
-        largest_playlist_obj['items'] = largest_playlist_tracks
-        return largest_playlist_obj
-
-    response = requests.get(
-        f"https://api.spotify.com/v1/playlists/{playlist_id}/tracks",
+    # no matter what, get first 100 tracks 
+    response = requests.get(f"https://api.spotify.com/v1/playlists/{playlist_id}",
         headers={
-            "Authorization": f"Bearer {token}",
-            "Content-Type": "application/json",
-            "offset": '0'
-        }
-    )
+                "Authorization": f"Bearer {token}",
+                "Content-Type": "application/json",
+                "offset": '0'
+            }
+        )
 
-    json_response = response.json()
+    if response:
+        response_json = response.json()
+        name = response_json['name']
+        num_tracks = response_json['tracks']['total']
+        tracks = response_json['tracks']['items']
 
-    return json_response
-     
+        playlist['name'] = name
+        if num_tracks > 100:
+            iters = int(num_tracks / 100)
+
+            for i in range(1,iters):
+                if i % 10 == 0:
+                    token = get_new_token(client_id, client_secret)
+                offset = str((i)*100)
+                response = requests.get(f"https://api.spotify.com/v1/playlists/{playlist_id}",
+                    headers={
+                            "Authorization": f"Bearer {token}",
+                            "Content-Type": "application/json",
+                            "offset": offset
+                        }
+                    )
+                if response:
+                    response_json = response.json()
+                    tracks += response_json['tracks']['items']
+
+            playlist['items'] = tracks
+
+        else:
+            playlist['items'] = response_json['tracks']['items']
+
+        return playlist
+
 
 def get_tracks_from_rand_playlist(playlist_name):
     # get the tracks from the playlist selected
